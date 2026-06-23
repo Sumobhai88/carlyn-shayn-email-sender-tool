@@ -34,7 +34,7 @@ const ExportReports = () => {
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/v1/campaigns/');
+      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/');
       if (response.ok) {
         const data = await response.json();
         
@@ -132,7 +132,7 @@ const ExportReports = () => {
       
       // Call export API (note: this will download the file)
       const response = await fetch(
-        `http://localhost:8000/api/v1/exports/${category}?${params}`,
+        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/exports/${category}?${params}`,
         { method: 'GET' }
       );
       

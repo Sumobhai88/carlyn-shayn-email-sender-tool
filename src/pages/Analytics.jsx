@@ -36,7 +36,7 @@ const Analytics = () => {
 
   const fetchCampaigns = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/campaigns/');
+      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/');
       if (response.ok) {
         const data = await response.json();
         console.log('📋 Campaigns Fetched:', data.campaigns?.length || 0, 'campaigns');
@@ -53,7 +53,7 @@ const Analytics = () => {
       setLoading(true);
       
       // Fetch analytics stats
-      const statsResponse = await fetch('http://localhost:8000/api/v1/analytics/stats');
+      const statsResponse = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/analytics/stats');
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats({
@@ -67,7 +67,7 @@ const Analytics = () => {
       }
       
       // Fetch email logs
-      const logsResponse = await fetch('http://localhost:8000/api/v1/analytics/email-logs?limit=1000');
+      const logsResponse = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/analytics/email-logs?limit=1000');
       if (logsResponse.ok) {
         const logsData = await logsResponse.json();
         console.log('📧 Email Logs Fetched:', logsData.email_logs?.length || 0, 'emails');
@@ -191,7 +191,7 @@ const Analytics = () => {
       }
       
       // Call export API
-      const response = await fetch(`http://localhost:8000/api/v1/exports/email-logs?${params.toString()}`);
+      const response = await fetch(`http://const API_URL = import.meta.env.VITE_API_URL/api/v1/exports/email-logs?${params.toString()}`);
       
       if (response.ok) {
         // Get filename from response headers or use default

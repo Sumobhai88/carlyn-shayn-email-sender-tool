@@ -36,7 +36,7 @@ const Templates = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/v1/templates/');
+      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/');
       if (response.ok) {
         const data = await response.json();
         setTemplates(data.templates || []);
@@ -60,7 +60,7 @@ const Templates = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/templates/', {
+      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -91,7 +91,7 @@ const Templates = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/templates/${editingTemplate.id}`, {
+      const response = await fetch(`http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/${editingTemplate.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -118,7 +118,7 @@ const Templates = () => {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/templates/${id}`, {
+      const response = await fetch(`http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/${id}`, {
         method: 'DELETE'
       });
 

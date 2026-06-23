@@ -33,7 +33,7 @@ const Dashboard = () => {
       
       // First, fix campaign stats
       try {
-        const fixRes = await fetch('http://localhost:8000/api/v1/campaigns/fix-stats', {
+        const fixRes = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/fix-stats', {
           method: 'POST'
         });
         const fixData = await fixRes.json();
@@ -57,7 +57,7 @@ const Dashboard = () => {
       await new Promise(resolve => setTimeout(resolve, 300));
       
       // Fetch campaigns
-      const campaignsRes = await fetch('http://localhost:8000/api/v1/campaigns/');
+      const campaignsRes = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/');
       const campaignsData = await campaignsRes.json();
       
       console.log('Campaigns data:', campaignsData);

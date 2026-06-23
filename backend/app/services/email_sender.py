@@ -141,8 +141,8 @@ class EmailSender:
         html_content = raw_content.replace('\n', '<br>')
 
         # Add unsubscribe link and tracking pixel
-        unsubscribe_link = f"http://localhost:8000/api/v1/unsubscribe/{tracking_id}"
-        tracking_pixel = f"http://localhost:8000/api/v1/tracking/open/{tracking_id}"
+        unsubscribe_link = f"http://const API_URL = import.meta.env.VITE_API_URL/api/v1/unsubscribe/{tracking_id}"
+        tracking_pixel = f"http://const API_URL = import.meta.env.VITE_API_URL/api/v1/tracking/open/{tracking_id}"
         
         tracked_html = (
             f"<div style='font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333;'>"

@@ -46,7 +46,7 @@ const CampaignBuilder = () => {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/templates/');
+      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/');
       if (response.ok) {
         const data = await response.json();
         setTemplates(data.templates || []);
@@ -182,7 +182,7 @@ const CampaignBuilder = () => {
   // Fetch campaign progress from backend
   const fetchCampaignProgress = async (campaignId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/campaigns/${campaignId}/progress`);
+      const response = await fetch(`http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaignId}/progress`);
       if (response.ok) {
         const data = await response.json();
         
@@ -242,7 +242,7 @@ const CampaignBuilder = () => {
         template: emailBody
       };
 
-      const createResponse = await fetch('http://localhost:8000/api/v1/campaigns/', {
+      const createResponse = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(campaignData)
@@ -264,7 +264,7 @@ const CampaignBuilder = () => {
         formData.append('file', file);
 
         const uploadResponse = await fetch(
-          `http://localhost:8000/api/v1/campaigns/${campaign.id}/upload-recipients`,
+          `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaign.id}/upload-recipients`,
           {
             method: 'POST',
             body: formData
@@ -295,7 +295,7 @@ const CampaignBuilder = () => {
         formData.append('file', csvFile);
 
         const uploadResponse = await fetch(
-          `http://localhost:8000/api/v1/campaigns/${campaign.id}/upload-recipients`,
+          `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaign.id}/upload-recipients`,
           {
             method: 'POST',
             body: formData
@@ -317,7 +317,7 @@ const CampaignBuilder = () => {
 
       // Step 3: Start campaign
       const startResponse = await fetch(
-        `http://localhost:8000/api/v1/campaigns/${campaign.id}/start`,
+        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaign.id}/start`,
         { method: 'POST' }
       );
 
@@ -348,7 +348,7 @@ const CampaignBuilder = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/campaigns/${currentCampaignId}/pause`,
+        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${currentCampaignId}/pause`,
         { method: 'POST' }
       );
 
@@ -371,7 +371,7 @@ const CampaignBuilder = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/campaigns/${currentCampaignId}/stop`,
+        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${currentCampaignId}/stop`,
         { method: 'POST' }
       );
 

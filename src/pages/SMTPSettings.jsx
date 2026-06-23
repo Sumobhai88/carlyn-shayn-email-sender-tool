@@ -40,7 +40,7 @@ const SMTPSettings = () => {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/v1/smtp-profiles/');
+      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/');
       if (response.ok) {
         const data = await response.json();
         setProfiles(data);
@@ -87,7 +87,7 @@ const SMTPSettings = () => {
       if (editingProfile) {
         // Update existing profile
         const response = await fetch(
-          `http://localhost:8000/api/v1/smtp-profiles/${editingProfile.id}`,
+          `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${editingProfile.id}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -106,7 +106,7 @@ const SMTPSettings = () => {
         }
       } else {
         // Add new profile
-        const response = await fetch('http://localhost:8000/api/v1/smtp-profiles/', {
+        const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -155,7 +155,7 @@ const SMTPSettings = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/smtp-profiles/${id}`,
+        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${id}`,
         { method: 'DELETE' }
       );
 
@@ -178,7 +178,7 @@ const SMTPSettings = () => {
   const handleSetActive = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/smtp-profiles/${id}/set-active`,
+        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${id}/set-active`,
         { method: 'POST' }
       );
 
@@ -203,7 +203,7 @@ const SMTPSettings = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/smtp-profiles/${id}/test`,
+        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${id}/test`,
         { method: 'POST' }
       );
 
