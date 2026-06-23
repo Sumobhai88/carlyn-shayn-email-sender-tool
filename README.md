@@ -1,4 +1,4 @@
-# Email Sender Pro
+# Email Sender
 
 Professional bulk email sending platform with campaign management, analytics, and tracking.
 
