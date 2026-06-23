@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-gray-50 to-gray-100 text-black antialiased;
+  }
+  
+  * {
+    @apply border-gray-300;
+  }
+  
+  /* Force dark text everywhere */
+  h1, h2, h3, h4, h5, h6, p, span, div, label {
+    @apply text-gray-900;
+  }
+
+  /* Custom Scrollbar - Enhanced */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gradient-to-b from-gold to-gold-dark rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply from-gold-light to-gold;
+  }
+}
+
+@layer components {
+  /* Enhanced Card Component */
+  .card {
+    @apply bg-white border-2 border-gray-300 rounded-2xl shadow-lg;
+    transform: translateY(0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-hover {
+    @apply hover:shadow-2xl hover:border-gold/40 hover:-translate-y-2;
+  }
+  
+  /* Glass effect (enhanced) */
+  .glass {
+    @apply bg-white/95 backdrop-blur-xl border-2 border-gray-300 shadow-xl;
+  }
+  
+  .glass-hover {
+    @apply transition-all duration-300 hover:shadow-2xl hover:border-gold/40 hover:scale-[1.02];
+  }
+  
+  /* Gradient backgrounds */
+  .gradient-gold {
+    @apply bg-gradient-to-r from-gold to-gold-light;
+  }
+  
+  .gradient-gold-radial {
+    background: radial-gradient(circle at top right, #F4D03F, #D4AF37, #B8941E);
+  }
+  
+  /* Text utilities - force dark */
+  .text-primary {
+    @apply text-gray-900 font-bold;
+  }
+  
+  .text-secondary {
+    @apply text-gray-700 font-semibold;
+  }
+  
+  .text-muted {
+    @apply text-gray-600 font-medium;
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+  50% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+.shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+  background-size: 1000px 100%;
+}
