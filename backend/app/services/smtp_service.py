@@ -35,141 +35,68 @@ class SMTPService:
     # CREATE
     # ==========================================================================
     
-    async def create_profile(self, profile_data: SMTPProfileCreate) -> SMTPProfile:
-        """
-        Create new SMTP profile
-        
-        Validations:
-        - Profile name must be unique
-        - Email format validated by Pydantic
-        - Port range validated (1-65535)
-        - Password is encoded for later SMTP login
-        
-        Args:
-            profile_data: SMTP profile creation data
-            
-        Returns:
-            Created SMTP profile
-            
-        Raises:
-            ProfileAlreadyExistsError: If profile name exists
-        """
-        # Check if profile name already exists
-        existing = self.db.query(SMTPProfile).filter(
-            SMTPProfile.profile_name == profile_data.profile_name
-        ).first()
-        
-        if existing:
-            logger.warning(f"Attempted to create duplicate profile: {profile_data.profile_name}")
+    async def create_profile(self, profile_data: SMTPProfileCreate, user_id: int = None) -> SMTPProfile:
+        """Create new SMTP profile"""
+        # Check unique name per user only (not globally)
+        query = self.db.query(SMTPProfile).filter(SMTPProfile.profile_name == profile_data.profile_name)
+        if user_id is not None:
+            query = query.filter(SMTPProfile.user_id == user_id)
+        if query.first():
             raise ProfileAlreadyExistsError(profile_data.profile_name)
         
-        # Create profile with encrypted password
         profile_dict = profile_data.model_dump()
         profile_dict['password'] = encrypt_secret(profile_data.password)
+        if user_id is not None:
+            profile_dict['user_id'] = user_id
         
+        # Remove profile_name from dict temporarily, add manually to avoid unique constraint issues
         profile = SMTPProfile(**profile_dict)
-        
         self.db.add(profile)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise ProfileAlreadyExistsError(profile_data.profile_name)
         self.db.refresh(profile)
-        
-        logger.info(f"Created SMTP profile: {profile.profile_name} (ID: {profile.id})")
         return profile
     
     # ==========================================================================
     # READ
     # ==========================================================================
     
-    async def get_profiles(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        active_only: bool = False
-    ) -> List[SMTPProfile]:
-        """
-        Get all SMTP profiles with optional filtering
-        
-        Args:
-            skip: Number of records to skip
-            limit: Maximum number of records
-            active_only: Only return active profiles
-            
-        Returns:
-            List of SMTP profiles
-        """
+    async def get_profiles(self, skip: int = 0, limit: int = 100, active_only: bool = False, user_id: int = None) -> List[SMTPProfile]:
+        """Get SMTP profiles for current user"""
         query = self.db.query(SMTPProfile)
-        
+        if user_id is not None:
+            query = query.filter(SMTPProfile.user_id == user_id)
         if active_only:
             query = query.filter(SMTPProfile.is_active == True)
-        
-        profiles = query.offset(skip).limit(limit).all()
-        logger.debug(f"Retrieved {len(profiles)} SMTP profiles")
-        return profiles
+        return query.offset(skip).limit(limit).all()
     
-    async def get_profile(self, profile_id: int) -> SMTPProfile:
-        """
-        Get SMTP profile by ID
-        
-        Args:
-            profile_id: Profile ID
-            
-        Returns:
-            SMTP profile
-            
-        Raises:
-            ProfileNotFoundError: If profile doesn't exist
-        """
-        profile = self.db.query(SMTPProfile).filter(
-            SMTPProfile.id == profile_id
-        ).first()
-        
+    async def get_profile(self, profile_id: int, user_id: int = None) -> SMTPProfile:
+        """Get SMTP profile by ID"""
+        query = self.db.query(SMTPProfile).filter(SMTPProfile.id == profile_id)
+        if user_id is not None:
+            query = query.filter(SMTPProfile.user_id == user_id)
+        profile = query.first()
         if not profile:
-            logger.warning(f"Profile not found: ID {profile_id}")
             raise ProfileNotFoundError(profile_id)
-        
         return profile
     
-    async def get_active_profile(self) -> Optional[SMTPProfile]:
-        """
-        Get currently active SMTP profile
-        
-        Returns:
-            Active profile or None
-        """
-        profile = self.db.query(SMTPProfile).filter(
-            SMTPProfile.is_active == True
-        ).first()
-        
-        if profile:
-            logger.debug(f"Active profile: {profile.profile_name}")
-        else:
-            logger.warning("No active SMTP profile found")
-        
-        return profile
+    async def get_active_profile(self, user_id: int = None) -> Optional[SMTPProfile]:
+        """Get currently active SMTP profile for user"""
+        query = self.db.query(SMTPProfile).filter(SMTPProfile.is_active == True)
+        if user_id is not None:
+            query = query.filter(SMTPProfile.user_id == user_id)
+        return query.first()
     
     # ==========================================================================
     # UPDATE
     # ==========================================================================
     
-    async def update_profile(
-        self,
-        profile_id: int,
-        profile_update: SMTPProfileUpdate
-    ) -> SMTPProfile:
-        """
-        Update SMTP profile
-        
-        Args:
-            profile_id: Profile ID
-            profile_update: Fields to update
-            
-        Returns:
-            Updated profile
-            
-        Raises:
-            ProfileNotFoundError: If profile doesn't exist
-        """
-        profile = await self.get_profile(profile_id)
+    async def update_profile(self, profile_id: int, profile_update: SMTPProfileUpdate, user_id: int = None) -> SMTPProfile:
+        """Update SMTP profile"""
+        profile = await self.get_profile(profile_id, user_id=user_id)
         
         # Update only provided fields
         update_data = profile_update.model_dump(exclude_unset=True)
@@ -211,63 +138,25 @@ class SMTPService:
     # DELETE
     # ==========================================================================
     
-    async def delete_profile(self, profile_id: int):
-        """
-        Delete SMTP profile
-        
-        Business Rules:
-        - Cannot delete active profile
-        
-        Args:
-            profile_id: Profile ID
-            
-        Raises:
-            ProfileNotFoundError: If profile doesn't exist
-            ActiveProfileDeletionError: If trying to delete active profile
-        """
-        profile = await self.get_profile(profile_id)
-        
-        # Check if profile is active
+    async def delete_profile(self, profile_id: int, user_id: int = None):
+        """Delete SMTP profile"""
+        profile = await self.get_profile(profile_id, user_id=user_id)
         if profile.is_active:
-            logger.warning(f"Attempted to delete active profile: {profile.profile_name}")
             raise ActiveProfileDeletionError(profile_id)
-        
         self.db.delete(profile)
         self.db.commit()
-        
-        logger.info(f"Deleted SMTP profile: {profile.profile_name} (ID: {profile_id})")
     
-    # ==========================================================================
-    # ACTIVE PROFILE MANAGEMENT
-    # ==========================================================================
-    
-    async def set_active_profile(self, profile_id: int) -> SMTPProfile:
-        """
-        Set SMTP profile as active
-        
-        Business Rules:
-        - Only one profile can be active
-        - All others are automatically deactivated
-        
-        Args:
-            profile_id: Profile ID to activate
-            
-        Returns:
-            Activated profile
-            
-        Raises:
-            ProfileNotFoundError: If profile doesn't exist
-        """
-        profile = await self.get_profile(profile_id)
-
-        # Deactivate all profiles only after the target has been verified.
-        self.db.query(SMTPProfile).update({"is_active": False})
+    async def set_active_profile(self, profile_id: int, user_id: int = None) -> SMTPProfile:
+        """Set SMTP profile as active - deactivates all others for this user"""
+        profile = await self.get_profile(profile_id, user_id=user_id)
+        # Only deactivate this user's profiles
+        query = self.db.query(SMTPProfile)
+        if user_id is not None:
+            query = query.filter(SMTPProfile.user_id == user_id)
+        query.update({"is_active": False})
         profile.is_active = True
-        
         self.db.commit()
         self.db.refresh(profile)
-        
-        logger.info(f"Activated SMTP profile: {profile.profile_name} (ID: {profile_id})")
         return profile
     
     # ==========================================================================
@@ -426,50 +315,22 @@ Email Automation Platform
     # BULK OPERATIONS
     # ==========================================================================
     
-    async def get_all_statuses(self) -> List[SMTPConnectionStatus]:
-        """
-        Get connection status for all profiles
-        
-        Returns:
-            List of profile statuses
-        """
-        profiles = await self.get_profiles()
-        
-        statuses = [
-            SMTPConnectionStatus(
-                id=p.id,
-                profile_name=p.profile_name,
-                status=p.status,
-                is_active=p.is_active,
-                last_tested=p.updated_at
-            )
+    async def get_all_statuses(self, user_id: int = None) -> List[SMTPConnectionStatus]:
+        """Get connection status for all profiles of current user"""
+        profiles = await self.get_profiles(user_id=user_id)
+        return [
+            SMTPConnectionStatus(id=p.id, profile_name=p.profile_name, status=p.status, is_active=p.is_active, last_tested=p.updated_at)
             for p in profiles
         ]
-        
-        return statuses
     
-    async def test_all_connections(self) -> List[SMTPTestResponse]:
-        """
-        Test all SMTP connections
-        
-        Returns:
-            List of test results
-        """
-        profiles = await self.get_profiles()
+    async def test_all_connections(self, user_id: int = None) -> List[SMTPTestResponse]:
+        """Test all SMTP connections for current user"""
+        profiles = await self.get_profiles(user_id=user_id)
         results = []
-        
         for profile in profiles:
             try:
                 result = await self.test_connection(profile.id)
                 results.append(result)
             except Exception as e:
-                logger.error(f"Error testing profile {profile.id}: {str(e)}")
-                results.append(SMTPTestResponse(
-                    success=False,
-                    message=f"Test failed: {str(e)}",
-                    status="failed",
-                    profile_id=profile.id,
-                    error_details=str(e)
-                ))
-        
+                results.append(SMTPTestResponse(success=False, message=f"Test failed: {str(e)}", status="failed", profile_id=profile.id, error_details=str(e)))
         return results

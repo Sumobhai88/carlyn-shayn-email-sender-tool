@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4AF37;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F4D03F;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="50" cy="50" r="48" fill="#0A0A0A"/>
+  <circle cx="50" cy="50" r="46" fill="none" stroke="url(#goldGradient)" stroke-width="2"/>
+  
+  <!-- Email Icon -->
+  <rect x="25" y="35" width="50" height="35" rx="4" fill="none" stroke="url(#goldGradient)" stroke-width="3"/>
+  <path d="M 25 35 L 50 55 L 75 35" fill="none" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- CS Letters -->
+  <text x="50" y="30" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="url(#goldGradient)" text-anchor="middle">CS</text>
+</svg>

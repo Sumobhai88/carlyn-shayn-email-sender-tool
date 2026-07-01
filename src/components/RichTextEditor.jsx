@@ -53,172 +53,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, availableTags = [
 
   const fontSizes = ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '22px', '24px', '28px', '32px', '36px', '42px', '48px', '56px', '64px', '72px'];
   
-  const fontFamilies = [
-    // Serif Fonts
-    'Georgia',
-    'Palatino Linotype',
-    'Book Antiqua',
-    'Times New Roman',
-    'Times',
-    'Garamond',
-    'Baskerville',
-    'Cambria',
-    'Didot',
-    'Bodoni MT',
-    'Goudy Old Style',
-    'Perpetua',
-    'Rockwell',
-    'Century',
-    'Bookman Old Style',
-    
-    // Sans-Serif Fonts
-    'Arial',
-    'Helvetica',
-    'Verdana',
-    'Geneva',
-    'Tahoma',
-    'Trebuchet MS',
-    'Calibri',
-    'Candara',
-    'Segoe UI',
-    'Franklin Gothic Medium',
-    'Arial Black',
-    'Impact',
-    'Lucida Sans Unicode',
-    'Lucida Grande',
-    'Century Gothic',
-    'Gill Sans',
-    'Avant Garde',
-    'Futura',
-    'Optima',
-    'Corbel',
-    'Myriad Pro',
-    
-    // Monospace Fonts
-    'Courier New',
-    'Courier',
-    'Lucida Console',
-    'Monaco',
-    'Consolas',
-    'Andale Mono',
-    'DejaVu Sans Mono',
-    'Liberation Mono',
-    
-    // Cursive/Decorative Fonts
-    'Comic Sans MS',
-    'Brush Script MT',
-    'Lucida Handwriting',
-    'Papyrus',
-    'Copperplate',
-    'Zapfino',
-    'Bradley Hand',
-    'Marker Felt',
-    'Chalkduster',
-    'Snell Roundhand',
-    
-    // Modern Web Fonts
-    'Open Sans',
-    'Roboto',
-    'Lato',
-    'Montserrat',
-    'Raleway',
-    'Poppins',
-    'Source Sans Pro',
-    'Ubuntu',
-    'Nunito',
-    'Quicksand',
-    'Mukta',
-    'Karla',
-    'Work Sans',
-    'Fira Sans',
-    'Barlow',
-    'Rubik',
-    'Hind',
-    'Oxygen',
-    'PT Sans',
-    'Noto Sans',
-    'Inter',
-    'IBM Plex Sans',
-    'DM Sans',
-    'Mulish',
-    'Manrope',
-    'Red Hat Display',
-    'Archivo',
-    'Public Sans',
-    'Outfit',
-    'Space Grotesk',
-    
-    // Classic Fonts
-    'Palatino',
-    'Hoefler Text',
-    'Big Caslon',
-    'Didot',
-    'American Typewriter',
-    'Baskerville Old Face',
-    'Bell MT',
-    'Californian FB',
-    'Centaur',
-    'Constantia',
-    'Elephant',
-    'Footlight MT Light',
-    'French Script MT',
-    'Freestyle Script',
-    'Gabriola',
-    'Gigi',
-    'Gloucester MT Extra Condensed',
-    'Goudy Stout',
-    'Haettenschweiler',
-    'Harrington',
-    'High Tower Text',
-    'Imprint MT Shadow',
-    'Informal Roman',
-    'Jokerman',
-    'Juice ITC',
-    'Kunstler Script',
-    'Wide Latin',
-    'Vladimir Script',
-    'Tw Cen MT',
-    'Sylfaen',
-    'Stencil',
-    'Snap ITC',
-    'Script MT Bold',
-    'Ravie',
-    'Rage Italic',
-    'Pristina',
-    'Poor Richard',
-    'Playbill',
-    'Parchment',
-    'Palace Script MT',
-    'Onyx',
-    'Old English Text MT',
-    'OCR A Extended',
-    'Niagara Solid',
-    'Niagara Engraved',
-    'Mistral',
-    'Magneto',
-    'Lucida Fax',
-    'Lucida Calligraphy',
-    'Kristen ITC',
-    'Forte',
-    'Felix Titling',
-    'Engravers MT',
-    'Edwardian Script ITC',
-    'Curlz MT',
-    'Colonna MT',
-    'Chiller',
-    'Castellar',
-    'Calisto MT',
-    'Britannic Bold',
-    'Blackadder ITC',
-    'Algerian',
-    'Berlin Sans FB',
-    'Bernard MT Condensed',
-    'Bauhaus 93',
-    'Baskerville Old Face',
-    'Bahnschrift',
-    'Arial Narrow',
-    'Arial Rounded MT Bold'
-  ];
+  // fontFamilies removed — options are defined directly in JSX below
 
   return (
     <div className="w-full">
@@ -268,10 +103,8 @@ const RichTextEditor = ({ value, onChange, label, placeholder, availableTags = [
           </optgroup>
           
           <optgroup label="━━━ Serif Fonts ━━━">
-            <option value="Georgia">Georgia</option>
             <option value="Palatino Linotype">Palatino Linotype</option>
             <option value="Book Antiqua">Book Antiqua</option>
-            <option value="Times New Roman">Times New Roman</option>
             <option value="Garamond">Garamond</option>
             <option value="Baskerville">Baskerville</option>
             <option value="Cambria">Cambria</option>
@@ -285,13 +118,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, availableTags = [
           </optgroup>
           
           <optgroup label="━━━ Sans-Serif Fonts ━━━">
-            <option value="Arial">Arial</option>
-            <option value="Helvetica">Helvetica</option>
-            <option value="Verdana">Verdana</option>
             <option value="Geneva">Geneva</option>
-            <option value="Tahoma">Tahoma</option>
-            <option value="Trebuchet MS">Trebuchet MS</option>
-            <option value="Calibri">Calibri</option>
             <option value="Candara">Candara</option>
             <option value="Segoe UI">Segoe UI</option>
             <option value="Franklin Gothic Medium">Franklin Gothic Medium</option>
@@ -345,9 +172,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, availableTags = [
             <option value="Castellar">Castellar</option>
           </optgroup>
           
-          {fontFamilies.map(font => (
-            <option key={font} value={font} style={{ display: 'none' }}>{font}</option>
-          ))}
+          {/* No extra font mapping needed */}
         </select>
 
         {/* Font Size */}

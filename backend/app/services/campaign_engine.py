@@ -28,6 +28,26 @@ from app.core.security import decrypt_secret
 logger = logging.getLogger(__name__)
 
 
+def _create_notification(db, campaign, notif_type: str, title: str, message: str):
+    """Create a notification for the campaign owner"""
+    try:
+        from app.models.notification import Notification
+        if not campaign.user_id:
+            return
+        notif = Notification(
+            user_id=campaign.user_id,
+            type=notif_type,
+            title=title,
+            message=message,
+            campaign_id=campaign.id,
+            is_read=False
+        )
+        db.add(notif)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Failed to create notification: {e}") 
+
+
 # ---------------------------------------------------------------------------
 # Per-campaign runtime state container
 # ---------------------------------------------------------------------------
@@ -134,6 +154,14 @@ def _send_loop(
         campaign.started_at = campaign.started_at or datetime.now(timezone.utc)
         db.commit()
         state.status = "running"
+
+        # Notify campaign started
+        _create_notification(
+            db, campaign,
+            notif_type="info",
+            title="Campaign Started",
+            message=f"'{campaign.campaign_name}' started sending emails."
+        )
 
         smtp_profile = _get_active_smtp_profile(db)
         if not smtp_profile:
@@ -265,6 +293,12 @@ def _send_loop(
                 log.delivered_at = datetime.now(timezone.utc)
                 campaign.sent_count = (campaign.sent_count or 0) + 1
                 campaign.delivered_count = (campaign.delivered_count or 0) + 1
+                # Increment user's used email counter
+                if campaign.user_id:
+                    from app.models.user import User
+                    u = db.query(User).filter(User.id == campaign.user_id).first()
+                    if u:
+                        u.emails_used = (u.emails_used or 0) + 1
                 logger.info(
                     f"[Engine] ✓ Sent to {contact.email} "
                     f"(campaign {campaign_id}, "
@@ -311,6 +345,13 @@ def _send_loop(
             campaign.completed_at = datetime.now(timezone.utc)
             state.status = "completed"
             logger.info(f"[Engine] Campaign {campaign_id} — all emails processed, completed.")
+            # Create completion notification
+            _create_notification(
+                db, campaign,
+                notif_type="success",
+                title="Campaign Completed",
+                message=f"'{campaign.campaign_name}' — {campaign.sent_count} emails sent, {campaign.delivered_count} delivered."
+            )
 
         db.commit()
 
@@ -548,4 +589,4 @@ class CampaignEngine:
 
 
 # Module-level singleton — import this everywhere
-campaign_engine = CampaignEngine(delay_min=5.0, delay_max=5.0)
+campaign_engine = CampaignEngine(delay_min=1.0, delay_max=2.0)

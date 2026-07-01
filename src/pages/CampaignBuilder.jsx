@@ -11,6 +11,7 @@ import Textarea from '../components/Textarea';
 import RichTextEditor from '../components/RichTextEditor';
 import { useState, useRef, useEffect } from 'react';
 import { useToast } from '../components/Toast';
+import { api } from '../utils/api';
 
 const CampaignBuilder = () => {
   const [campaignName, setCampaignName] = useState('');
@@ -46,7 +47,7 @@ const CampaignBuilder = () => {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/');
+      const response = await api.get('/api/v1/templates/');
       if (response.ok) {
         const data = await response.json();
         setTemplates(data.templates || []);
@@ -170,19 +171,30 @@ const CampaignBuilder = () => {
 
   // Replace personalization tags with dummy data for preview
   const renderPreview = (text) => {
-    if (!text) return 'Your email content will appear here...';
-    return text
-      .replace(/{first_name}/g, dummyData.first_name)
-      .replace(/{last_name}/g, dummyData.last_name)
-      .replace(/{email}/g, dummyData.email)
-      .replace(/{phone}/g, dummyData.phone)
-      .replace(/{company}/g, dummyData.company);
+    if (!text) return '';
+    let result = text
+      .replace(/\{first_name\}/g, dummyData.first_name)
+      .replace(/\{\{first_name\}\}/g, dummyData.first_name)
+      .replace(/\{last_name\}/g, dummyData.last_name)
+      .replace(/\{\{last_name\}\}/g, dummyData.last_name)
+      .replace(/\{email\}/g, dummyData.email)
+      .replace(/\{\{email\}\}/g, dummyData.email)
+      .replace(/\{phone\}/g, dummyData.phone)
+      .replace(/\{\{phone\}\}/g, dummyData.phone)
+      .replace(/\{company\}/g, dummyData.company)
+      .replace(/\{\{company\}\}/g, dummyData.company);
+    
+    // Replace any remaining {tag} or {{tag}} with sample value
+    result = result.replace(/\{\{(\w+)\}\}/g, (_, tag) => `[${tag}]`);
+    result = result.replace(/\{(\w+)\}/g, (_, tag) => `[${tag}]`);
+    
+    return result;
   };
 
   // Fetch campaign progress from backend
   const fetchCampaignProgress = async (campaignId) => {
     try {
-      const response = await fetch(`http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaignId}/progress`);
+      const response = await api.get(`/api/v1/campaigns/${campaignId}/progress`);
       if (response.ok) {
         const data = await response.json();
         
@@ -242,11 +254,7 @@ const CampaignBuilder = () => {
         template: emailBody
       };
 
-      const createResponse = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(campaignData)
-      });
+      const createResponse = await api.post('/api/v1/campaigns/', campaignData);
 
       if (!createResponse.ok) {
         throw new Error('Failed to create campaign');
@@ -263,12 +271,9 @@ const CampaignBuilder = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const uploadResponse = await fetch(
-          `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaign.id}/upload-recipients`,
-          {
-            method: 'POST',
-            body: formData
-          }
+        const uploadResponse = await api.postForm(
+          `/api/v1/campaigns/${campaign.id}/upload-recipients`,
+          formData
         );
 
         if (!uploadResponse.ok) {
@@ -294,12 +299,9 @@ const CampaignBuilder = () => {
         const formData = new FormData();
         formData.append('file', csvFile);
 
-        const uploadResponse = await fetch(
-          `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaign.id}/upload-recipients`,
-          {
-            method: 'POST',
-            body: formData
-          }
+        const uploadResponse = await api.postForm(
+          `/api/v1/campaigns/${campaign.id}/upload-recipients`,
+          formData
         );
 
         if (!uploadResponse.ok) {
@@ -316,10 +318,7 @@ const CampaignBuilder = () => {
       }));
 
       // Step 3: Start campaign
-      const startResponse = await fetch(
-        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${campaign.id}/start`,
-        { method: 'POST' }
-      );
+      const startResponse = await api.post(`/api/v1/campaigns/${campaign.id}/start`);
 
       if (!startResponse.ok) {
         throw new Error('Failed to start campaign');
@@ -345,35 +344,34 @@ const CampaignBuilder = () => {
 
   const pauseCampaign = async () => {
     if (!currentCampaignId) return;
-
     try {
-      const response = await fetch(
-        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${currentCampaignId}/pause`,
-        { method: 'POST' }
-      );
-
+      const response = await api.post(`/api/v1/campaigns/${currentCampaignId}/pause`);
       if (response.ok) {
         setCampaignStatus('paused');
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-        setTimeout(() => {
-          addToast('Campaign paused', 'warning');
-        }, 0);
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        setTimeout(() => addToast('Campaign paused', 'warning'), 0);
       }
-    } catch (error) {
-      console.error('Error pausing campaign:', error);
-    }
+    } catch (error) {}
+  };
+
+  const resumeCampaign = async () => {
+    if (!currentCampaignId) return;
+    try {
+      const response = await api.post(`/api/v1/campaigns/${currentCampaignId}/resume`);
+      if (response.ok) {
+        setCampaignStatus('running');
+        // Restart progress polling
+        progressIntervalRef.current = setInterval(() => fetchCampaignProgress(currentCampaignId), 3000);
+        setTimeout(() => addToast('Campaign resumed!', 'success'), 0);
+      }
+    } catch (error) {}
   };
 
   const stopCampaign = async () => {
     if (!currentCampaignId) return;
 
     try {
-      const response = await fetch(
-        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/${currentCampaignId}/stop`,
-        { method: 'POST' }
-      );
+      const response = await api.post(`/api/v1/campaigns/${currentCampaignId}/stop`);
 
       if (response.ok) {
         setCampaignStatus('stopped');
@@ -805,15 +803,15 @@ const CampaignBuilder = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <Button
                   onClick={startCampaign}
-                  disabled={campaignStatus === 'running'}
+                  disabled={campaignStatus === 'running' || campaignStatus === 'paused'}
                   variant="primary"
                   className="flex-1"
                 >
                   <Play className="w-4 h-4 mr-2" />
-                  Start Campaign
+                  Start
                 </Button>
                 
                 <Button
@@ -824,6 +822,16 @@ const CampaignBuilder = () => {
                 >
                   <Pause className="w-4 h-4 mr-2" />
                   Pause
+                </Button>
+
+                <Button
+                  onClick={resumeCampaign}
+                  disabled={campaignStatus !== 'paused'}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Resume
                 </Button>
                 
                 <Button
@@ -855,8 +863,8 @@ const CampaignBuilder = () => {
                     <Eye className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Live Preview</h3>
-                    <p className="text-sm text-gray-400">How your email will look</p>
+                    <h3 className="text-2xl font-black text-gray-900">Live Preview</h3>
+                    <p className="text-base font-bold text-gray-700">How your email will look</p>
                   </div>
                 </div>
               </div>
@@ -872,12 +880,19 @@ const CampaignBuilder = () => {
                 </div>
 
                 {/* Body Preview */}
-                <div className="p-6 rounded-xl bg-gray-50 border-2 border-gray-300 min-h-[400px] shadow-inner">
-                  <div className="prose prose-invert max-w-none">
+                <div className="p-6 rounded-xl bg-white border-2 border-gray-300 min-h-[400px] shadow-inner">
+                  {emailBody && emailBody.includes('<') ? (
+                    // Rich HTML preview
+                    <div
+                      className="text-gray-900 text-sm leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: renderPreview(emailBody) }}
+                    />
+                  ) : (
+                    // Plain text preview
                     <pre className="whitespace-pre-wrap font-sans text-gray-900 font-semibold text-sm leading-relaxed">
-                      {renderPreview(emailBody)}
+                      {renderPreview(emailBody) || 'Your email content will appear here...'}
                     </pre>
-                  </div>
+                  )}
                 </div>
 
                 <div className="p-4 rounded-xl bg-yellow-50 border-2 border-yellow-200">

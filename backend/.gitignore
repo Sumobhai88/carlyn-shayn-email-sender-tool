@@ -29,8 +29,9 @@ env/
 .env
 .env.local
 
-# Database
-*.db
+# Database (local files, Railway handles its own)
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 

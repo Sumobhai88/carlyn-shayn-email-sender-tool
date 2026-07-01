@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Server, BarChart3, 
   Settings, FileDown, FileText, Zap
@@ -16,14 +16,108 @@ import AnalyticsPage from './pages/Analytics';
 import ExportReportsPage from './pages/ExportReports';
 import TemplatesPage from './pages/Templates';
 import SettingsPage from './pages/Settings';
+import LoginPage from './pages/Login';
+import AdminPage from './pages/Admin';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function MainApp() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activePage, setActivePage] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const { addToast } = useToast();
+
+  // Check authentication on mount
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const token = localStorage.getItem('access_token');
+
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        setIsAuthenticated(true);
+      } else {
+        // Token invalid or expired - clear and show login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+      }
+    } catch (error) {
+      // Network error - clear token to be safe
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    addToast(`Welcome back, ${userData.name}!`, 'success');
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      await fetch(`${API_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (error) {
+      // ignore
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
+      addToast('Successfully logged out', 'success');
+    }
+  };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Admin panel — separate URL at /admin (only for superusers)
+  if (window.location.pathname === '/admin') {
+    if (user?.is_superuser) {
+      return <AdminPage />;
+    }
+    // Non-admin trying to access /admin → redirect home
+    window.location.href = '/';
+    return null;
+  }
 
   // Sample notifications
   const notifications = [
@@ -124,11 +218,6 @@ function MainApp() {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const user = {
-    name: 'Admin User',
-    email: 'admin@carlyshayn.com'
-  };
-
   const pageConfig = {
     'dashboard': {
       title: 'Dashboard',
@@ -212,18 +301,16 @@ function MainApp() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Sticky Navbar */}
         <Navbar 
           title={pageConfig[activePage].title}
           subtitle={pageConfig[activePage].subtitle}
-          notifications={notifications}
           onSearch={handleSearch}
-          onNotificationClick={handleNotificationClick}
-          searchQuery={searchQuery}
           searchResults={searchResults}
           showSearchResults={showSearchResults}
           onSearchResultClick={handleSearchResultClick}
           onCloseSearch={() => setShowSearchResults(false)}
+          onLogout={handleLogout}
+          user={user}
         />
 
         {/* Page Content with Smooth Transitions */}

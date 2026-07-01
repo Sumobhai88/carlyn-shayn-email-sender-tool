@@ -9,6 +9,8 @@ import Input from '../components/Input';
 import { useState, useEffect } from 'react';
 import { useToast } from '../components/Toast';
 
+import { api } from '../utils/api';
+
 const ExportReports = () => {
   const { addToast } = useToast();
   const [dateRange, setDateRange] = useState({
@@ -34,7 +36,7 @@ const ExportReports = () => {
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/');
+      const response = await api.get('/api/v1/campaigns/');
       if (response.ok) {
         const data = await response.json();
         
@@ -131,10 +133,7 @@ const ExportReports = () => {
       }
       
       // Call export API (note: this will download the file)
-      const response = await fetch(
-        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/exports/${category}?${params}`,
-        { method: 'GET' }
-      );
+      const response = await api.get(`/api/v1/exports/${category}?${params}`);
       
       if (response.ok) {
         const blob = await response.blob();

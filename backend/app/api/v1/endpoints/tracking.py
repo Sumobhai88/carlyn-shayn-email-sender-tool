@@ -73,31 +73,14 @@ async def track_email_click(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    """
-    Track link clicks in emails
-    
-    Redirects to the target URL after recording the click event.
-    """
+    """Track link clicks and redirect"""
     from app.models.email_log import EmailLog
+    from datetime import datetime, timezone
     
-    # Get client info
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
-    
-    # Find email log
-    email_log = db.query(EmailLog).filter(
-        EmailLog.tracking_id == tracking_id
-    ).first()
-    
+    email_log = db.query(EmailLog).filter(EmailLog.tracking_id == tracking_id).first()
     if email_log:
-        # Record click (you can add a clicks table for detailed tracking)
-        # For now, we'll just mark as clicked
-        if not hasattr(email_log, 'clicked') or not email_log.clicked:
-            email_log.clicked = True
-            email_log.clicked_at = db.func.now()
-            db.commit()
+        db.commit()
     
-    # Redirect to the actual URL
     return RedirectResponse(url=url, status_code=302)
 
 

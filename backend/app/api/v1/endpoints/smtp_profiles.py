@@ -10,6 +10,8 @@ from app.core.exceptions import (
     ProfileAlreadyExistsError,
     ProfileNotFoundError,
 )
+from app.core.dependencies import get_current_user
+from app.models.user import User
 from app.db.database import get_db
 from app.schemas.smtp_profile import (
     SMTPConnectionStatus,
@@ -22,6 +24,136 @@ from app.schemas.smtp_profile import (
 from app.services.smtp_service import SMTPService
 
 router = APIRouter()
+
+
+def _service(db: Session) -> SMTPService:
+    return SMTPService(db)
+
+
+@router.post("/", response_model=SMTPProfileResponse, status_code=status.HTTP_201_CREATED)
+async def create_smtp_profile(
+    profile: SMTPProfileCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return await _service(db).create_profile(profile, user_id=current_user.id)
+    except ProfileAlreadyExistsError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to create SMTP profile: {exc}")
+
+
+@router.get("/", response_model=List[SMTPProfileResponse])
+async def list_smtp_profiles(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    active_only: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List SMTP profiles for current user only"""
+    return await _service(db).get_profiles(skip=skip, limit=limit, active_only=active_only, user_id=current_user.id)
+
+
+@router.get("/active/current", response_model=Optional[SMTPProfileResponse])
+async def get_active_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return await _service(db).get_active_profile(user_id=current_user.id)
+
+
+@router.get("/status/all", response_model=List[SMTPConnectionStatus])
+async def get_all_statuses(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return await _service(db).get_all_statuses(user_id=current_user.id)
+
+
+@router.post("/test-connection", response_model=SMTPTestResponse)
+async def test_smtp_connection(
+    test_request: SMTPTestRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return await _service(db).test_connection(test_request.profile_id, test_request.test_email)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/test-all", response_model=List[SMTPTestResponse])
+async def test_all_connections(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return await _service(db).test_all_connections(user_id=current_user.id)
+
+
+@router.get("/{profile_id}", response_model=SMTPProfileResponse)
+async def get_smtp_profile(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return await _service(db).get_profile(profile_id, user_id=current_user.id)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.put("/{profile_id}", response_model=SMTPProfileResponse)
+async def update_smtp_profile(
+    profile_id: int,
+    profile_update: SMTPProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return await _service(db).update_profile(profile_id, profile_update, user_id=current_user.id)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ProfileAlreadyExistsError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.patch("/{profile_id}", response_model=SMTPProfileResponse)
+async def patch_smtp_profile(
+    profile_id: int,
+    profile_update: SMTPProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return await update_smtp_profile(profile_id, profile_update, db, current_user)
+
+
+@router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_smtp_profile(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        await _service(db).delete_profile(profile_id, user_id=current_user.id)
+        return None
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ActiveProfileDeletionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{profile_id}/set-active", response_model=SMTPProfileResponse)
+async def set_active_profile(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return await _service(db).set_active_profile(profile_id, user_id=current_user.id)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 def _service(db: Session) -> SMTPService:

@@ -4,6 +4,7 @@ Main API router combining all endpoint routers
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    auth,
     smtp_profiles,
     campaigns,
     recipients,
@@ -13,10 +14,31 @@ from app.api.v1.endpoints import (
     progress,
     tracking,
     unsubscribe,
-    bounces
+    bounces,
+    settings,
+    admin
 )
 
 api_router = APIRouter()
+
+# Auth routes (no prefix for cleaner URLs)
+api_router.include_router(
+    auth.router,
+    prefix="/auth",
+    tags=["Authentication"]
+)
+
+api_router.include_router(
+    settings.router,
+    prefix="/settings",
+    tags=["Settings"]
+)
+
+api_router.include_router(
+    admin.router,
+    prefix="/admin",
+    tags=["Admin"]
+)
 
 # Include all routers
 api_router.include_router(

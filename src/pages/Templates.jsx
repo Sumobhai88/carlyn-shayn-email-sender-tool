@@ -10,6 +10,7 @@ import Textarea from '../components/Textarea';
 import Modal from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { useToast } from '../components/Toast';
+import { api } from '../utils/api';
 
 const Templates = () => {
   const { addToast } = useToast();
@@ -36,7 +37,7 @@ const Templates = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/');
+      const response = await api.get('/api/v1/templates/');
       if (response.ok) {
         const data = await response.json();
         setTemplates(data.templates || []);
@@ -60,11 +61,7 @@ const Templates = () => {
     }
 
     try {
-      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const response = await api.post('/api/v1/templates/', formData);
 
       if (response.ok) {
         setTimeout(() => {
@@ -91,11 +88,7 @@ const Templates = () => {
     }
 
     try {
-      const response = await fetch(`http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/${editingTemplate.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const response = await api.put(`/api/v1/templates/${editingTemplate.id}`, formData);
 
       if (response.ok) {
         setTimeout(() => {
@@ -118,9 +111,7 @@ const Templates = () => {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      const response = await fetch(`http://const API_URL = import.meta.env.VITE_API_URL/api/v1/templates/${id}`, {
-        method: 'DELETE'
-      });
+      const response = await api.delete(`/api/v1/templates/${id}`);
 
       if (response.ok || response.status === 204) {
         setTimeout(() => {

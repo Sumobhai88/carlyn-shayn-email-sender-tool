@@ -10,6 +10,8 @@ from typing import Optional
 import logging
 
 from app.db.database import get_db
+from app.core.dependencies import get_current_user
+from app.models.user import User
 from app.services.export_service import ExportService
 
 router = APIRouter()
@@ -442,7 +444,10 @@ async def get_export_preview(
     summary="Export API Health Check",
     description="Check if export API is operational"
 )
-async def export_health_check(db: Session = Depends(get_db)):
+async def export_health_check(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     Health check for export API
     

@@ -11,6 +11,8 @@ import Modal from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { useToast } from '../components/Toast';
 
+import { api } from '../utils/api';
+
 const SMTPSettings = () => {
   const { addToast } = useToast();
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,7 +42,7 @@ const SMTPSettings = () => {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/');
+      const response = await api.get('/api/v1/smtp-profiles/');
       if (response.ok) {
         const data = await response.json();
         setProfiles(data);
@@ -86,14 +88,7 @@ const SMTPSettings = () => {
     try {
       if (editingProfile) {
         // Update existing profile
-        const response = await fetch(
-          `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${editingProfile.id}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-          }
-        );
+        const response = await api.put(`/api/v1/smtp-profiles/${editingProfile.id}`, formData);
 
         if (response.ok) {
           setTimeout(() => {
@@ -106,11 +101,7 @@ const SMTPSettings = () => {
         }
       } else {
         // Add new profile
-        const response = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
+        const response = await api.post('/api/v1/smtp-profiles/', formData);
 
         if (response.ok) {
           setTimeout(() => {
@@ -154,10 +145,7 @@ const SMTPSettings = () => {
     }
 
     try {
-      const response = await fetch(
-        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${id}`,
-        { method: 'DELETE' }
-      );
+      const response = await api.delete(`/api/v1/smtp-profiles/${id}`);
 
       if (response.ok) {
         setTimeout(() => {
@@ -177,10 +165,7 @@ const SMTPSettings = () => {
 
   const handleSetActive = async (id) => {
     try {
-      const response = await fetch(
-        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${id}/set-active`,
-        { method: 'POST' }
-      );
+      const response = await api.post(`/api/v1/smtp-profiles/${id}/set-active`);
 
       if (response.ok) {
         setTimeout(() => {
@@ -202,10 +187,7 @@ const SMTPSettings = () => {
     setTestingConnection(id);
 
     try {
-      const response = await fetch(
-        `http://const API_URL = import.meta.env.VITE_API_URL/api/v1/smtp-profiles/${id}/test`,
-        { method: 'POST' }
-      );
+      const response = await api.post(`/api/v1/smtp-profiles/${id}/test`);
 
       const result = await response.json();
 

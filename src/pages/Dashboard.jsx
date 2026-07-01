@@ -8,6 +8,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Table from '../components/Table';
 import { useToast } from '../components/Toast';
+import { api } from '../utils/api';
 
 const Dashboard = () => {
   const { addToast } = useToast();
@@ -33,11 +34,9 @@ const Dashboard = () => {
       
       // First, fix campaign stats
       try {
-        const fixRes = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/fix-stats', {
-          method: 'POST'
-        });
+        const fixRes = await api.post('/api/v1/campaigns/fix-stats');
         const fixData = await fixRes.json();
-        console.log('Fix stats result:', fixData);
+        // Stats fixed silently
         
         if (showToast) {
           setTimeout(() => {
@@ -45,7 +44,7 @@ const Dashboard = () => {
           }, 100);
         }
       } catch (error) {
-        console.log('Stats fix attempt:', error);
+        // Stats fix failed silently - not critical
         if (showToast) {
           setTimeout(() => {
             addToast('Failed to refresh stats', 'error');
@@ -57,10 +56,8 @@ const Dashboard = () => {
       await new Promise(resolve => setTimeout(resolve, 300));
       
       // Fetch campaigns
-      const campaignsRes = await fetch('http://const API_URL = import.meta.env.VITE_API_URL/api/v1/campaigns/');
+      const campaignsRes = await api.get('/api/v1/campaigns/');
       const campaignsData = await campaignsRes.json();
-      
-      console.log('Campaigns data:', campaignsData);
       
       if (campaignsData.campaigns) {
         setCampaigns(campaignsData.campaigns.slice(0, 5)); // Latest 5
@@ -75,8 +72,6 @@ const Dashboard = () => {
         
         const openRate = delivered > 0 ? ((opened / delivered) * 100).toFixed(1) : 0;
         
-        console.log('Calculated stats:', { totalCampaigns, emailsSent, delivered, opened, failed, unsubscribed, openRate });
-        
         setStats({
           totalCampaigns,
           emailsSent,
@@ -89,7 +84,7 @@ const Dashboard = () => {
       
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      // Error fetching dashboard data
       if (showToast) {
         setTimeout(() => {
           addToast('Failed to fetch dashboard data', 'error');

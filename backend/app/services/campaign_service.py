@@ -23,29 +23,33 @@ class CampaignService:
     def __init__(self, db: Session):
         self.db = db
 
-    async def create_campaign(self, campaign_data: CampaignCreate) -> Campaign:
+    async def create_campaign(self, campaign_data: CampaignCreate, user_id: int = None) -> Campaign:
         """Create new campaign"""
-        campaign = Campaign(**campaign_data.dict())
+        data = campaign_data.dict()
+        data['user_id'] = user_id
+        campaign = Campaign(**data)
         self.db.add(campaign)
         self.db.commit()
         self.db.refresh(campaign)
         return campaign
 
-    async def get_campaigns(self, skip: int = 0, limit: int = 100) -> List[Campaign]:
-        """Get all campaigns"""
-        return self.db.query(Campaign).offset(skip).limit(limit).all()
+    async def get_campaigns(self, skip: int = 0, limit: int = 100, user_id: int = None) -> List[Campaign]:
+        """Get campaigns - filtered by user_id"""
+        query = self.db.query(Campaign)
+        if user_id is not None:
+            query = query.filter(Campaign.user_id == user_id)
+        return query.offset(skip).limit(limit).all()
 
-    async def get_campaign(self, campaign_id: int) -> Optional[Campaign]:
-        """Get campaign by ID"""
-        return self.db.query(Campaign).filter(Campaign.id == campaign_id).first()
+    async def get_campaign(self, campaign_id: int, user_id: int = None) -> Optional[Campaign]:
+        """Get campaign by ID - optionally filtered by user"""
+        query = self.db.query(Campaign).filter(Campaign.id == campaign_id)
+        if user_id is not None:
+            query = query.filter(Campaign.user_id == user_id)
+        return query.first()
 
-    async def update_campaign(
-        self,
-        campaign_id: int,
-        campaign_update: CampaignUpdate
-    ) -> Campaign:
+    async def update_campaign(self, campaign_id: int, campaign_update: CampaignUpdate, user_id: int = None) -> Campaign:
         """Update campaign"""
-        campaign = await self.get_campaign(campaign_id)
+        campaign = await self.get_campaign(campaign_id, user_id=user_id)
         if not campaign:
             raise HTTPException(status_code=404, detail="Campaign not found")
 
@@ -57,9 +61,9 @@ class CampaignService:
         self.db.refresh(campaign)
         return campaign
 
-    async def delete_campaign(self, campaign_id: int):
+    async def delete_campaign(self, campaign_id: int, user_id: int = None):
         """Delete campaign"""
-        campaign = await self.get_campaign(campaign_id)
+        campaign = await self.get_campaign(campaign_id, user_id=user_id)
         if not campaign:
             raise HTTPException(status_code=404, detail="Campaign not found")
 
@@ -196,6 +200,30 @@ class CampaignService:
                 detail="Campaign has no contacts. Upload recipients first."
             )
 
+        # Check user limit & block status
+        from app.models.user import User
+        if campaign.user_id:
+            user = self.db.query(User).filter(User.id == campaign.user_id).first()
+            if user:
+                if user.is_blocked:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Your email service has been blocked by the administrator."
+                    )
+                limit = user.email_limit if user.email_limit is not None else 1000
+                used = user.emails_used if user.emails_used is not None else 0
+                remaining = limit - used
+                if remaining <= 0:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Email limit reached ({used}/{limit}). Contact admin to increase your limit."
+                    )
+                if contact_count > remaining:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"This campaign has {contact_count} recipients but you only have {remaining} emails remaining (limit: {limit}). Contact admin to increase your limit."
+                    )
+
         try:
             result = campaign_engine.start(campaign_id)
         except ValueError as exc:
@@ -264,16 +292,23 @@ class CampaignService:
 
     # ── Statistics ────────────────────────────────────────────────────────────
 
-    async def get_stats(self) -> dict:
-        """Get overall campaign statistics"""
-        total = self.db.query(func.count(Campaign.id)).scalar()
-        active = self.db.query(func.count(Campaign.id)).filter(
-            Campaign.status == CampaignStatus.RUNNING
-        ).scalar()
+    async def get_stats(self, user_id: int = None) -> dict:
+        """Get campaign statistics for current user"""
+        query = self.db.query(Campaign)
+        if user_id is not None:
+            query = query.filter(Campaign.user_id == user_id)
 
-        total_sent = self.db.query(func.sum(Campaign.sent_count)).scalar() or 0
-        total_delivered = self.db.query(func.sum(Campaign.delivered_count)).scalar() or 0
-        total_failed = self.db.query(func.sum(Campaign.failed_count)).scalar() or 0
+        total = query.count()
+        active = query.filter(Campaign.status == CampaignStatus.RUNNING).count()
+        total_sent = self.db.query(func.sum(Campaign.sent_count)).filter(
+            Campaign.user_id == user_id if user_id else True
+        ).scalar() or 0
+        total_delivered = self.db.query(func.sum(Campaign.delivered_count)).filter(
+            Campaign.user_id == user_id if user_id else True
+        ).scalar() or 0
+        total_failed = self.db.query(func.sum(Campaign.failed_count)).filter(
+            Campaign.user_id == user_id if user_id else True
+        ).scalar() or 0
 
         return {
             "total_campaigns": total,
@@ -281,6 +316,6 @@ class CampaignService:
             "total_sent": total_sent,
             "total_delivered": total_delivered,
             "total_failed": total_failed,
-            "average_open_rate": 42.8,   # populated from email_logs in future
-            "average_click_rate": 15.2
+            "average_open_rate": 0,
+            "average_click_rate": 0
         }

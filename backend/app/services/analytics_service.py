@@ -52,17 +52,18 @@ class AnalyticsService:
         limit: int = 10,
         campaign_id: Optional[int] = None,
         status_filter: Optional[str] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        user_id: Optional[int] = None
     ) -> dict:
-        """Get email logs with filters"""
-        # Join with Campaign to get campaign_name
+        """Get email logs with filters - scoped to user"""
         query = self.db.query(
             EmailLog,
             Campaign.campaign_name
-        ).join(
-            Campaign,
-            EmailLog.campaign_id == Campaign.id
-        )
+        ).join(Campaign, EmailLog.campaign_id == Campaign.id)
+        
+        # Filter by user's campaigns only
+        if user_id is not None:
+            query = query.filter(Campaign.user_id == user_id)
         
         if campaign_id:
             query = query.filter(EmailLog.campaign_id == campaign_id)
@@ -91,10 +92,9 @@ class AnalyticsService:
         total = query.count()
         results = query.order_by(EmailLog.created_at.desc()).offset(skip).limit(limit).all()
         
-        # Transform results to include campaign_name
         email_logs = []
         for email_log, campaign_name in results:
-            log_dict = {
+            email_logs.append({
                 "id": email_log.id,
                 "campaign_id": email_log.campaign_id,
                 "campaign_name": campaign_name,
@@ -110,20 +110,16 @@ class AnalyticsService:
                 "delivered_at": email_log.delivered_at.isoformat() if email_log.delivered_at else None,
                 "opened_at": email_log.opened_at.isoformat() if email_log.opened_at else None,
                 "created_at": email_log.created_at.isoformat() if email_log.created_at else None,
-            }
-            email_logs.append(log_dict)
+            })
         
-        return {
-            "total": total,
-            "email_logs": email_logs,
-            "skip": skip,
-            "limit": limit
-        }
+        return {"total": total, "email_logs": email_logs, "skip": skip, "limit": limit}
     
-    async def get_stats(self, campaign_id: Optional[int] = None) -> dict:
-        """Get detailed statistics"""
-        query = self.db.query(EmailLog)
+    async def get_stats(self, campaign_id: Optional[int] = None, user_id: Optional[int] = None) -> dict:
+        """Get detailed statistics - scoped to user"""
+        query = self.db.query(EmailLog).join(Campaign, EmailLog.campaign_id == Campaign.id)
         
+        if user_id is not None:
+            query = query.filter(Campaign.user_id == user_id)
         if campaign_id:
             query = query.filter(EmailLog.campaign_id == campaign_id)
         

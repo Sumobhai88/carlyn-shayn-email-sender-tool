@@ -10,23 +10,23 @@ dist-ssr/
 *.local
 
 # Database
-*.db
 *.db-shm
 *.db-wal
 backups/
+*.sqlite
+database.sqlite
 
-# Environment
+# Environment (NEVER push these)
 .env
 .env.local
 .env.production
 backend/.env
+backend-node/.env
 
 # Logs
 logs/
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Editor
 .vscode/
